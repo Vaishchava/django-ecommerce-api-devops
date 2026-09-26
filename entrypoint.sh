@@ -1,17 +1,22 @@
 #!/bin/sh
 
-echo 'Waiting for postgres...'
+set -e
 
-while ! nc -z $DB_HOSTNAME $DB_PORT; do
-    sleep 0.1
+echo "Waiting for PostgreSQL at ${DB_HOSTNAME}:${DB_PORT}..."
+
+timeout=60
+elapsed=0
+
+while ! nc -z "$DB_HOSTNAME" "$DB_PORT"; do
+    if [ "$elapsed" -ge "$timeout" ]; then
+        echo "ERROR: PostgreSQL was not reachable within ${timeout} seconds."
+        exit 1
+    fi
+
+    sleep 1
+    elapsed=$((elapsed + 1))
 done
 
-echo 'PostgreSQL started'
-
-echo 'Running migrations...'
-python manage.py migrate
-
-echo 'Collecting static files...'
-python manage.py collectstatic --no-input
+echo "PostgreSQL is reachable."
 
 exec "$@"

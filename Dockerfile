@@ -1,21 +1,29 @@
 FROM python:3.10.2-slim-bullseye
 
-ENV PIP_DISABLE_PIP_VERSION_CHECK 1
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-WORKDIR /code
+WORKDIR /app
 
-COPY ./requirements.txt .
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends netcat \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update -y && \
-    apt-get install -y netcat && \
-    pip install --upgrade pip && \
-    pip install -r requirements.txt
+COPY requirements.txt .
 
-COPY ./entrypoint.sh .
-RUN chmod +x /code/entrypoint.sh
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
+COPY entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh
 
 COPY . .
 
-ENTRYPOINT ["/code/entrypoint.sh"]
+RUN useradd --create-home --shell /bin/bash appuser \
+    && chown -R appuser:appuser /app
+
+USER appuser
+
+ENTRYPOINT ["/entrypoint.sh"]

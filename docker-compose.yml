@@ -3,16 +3,20 @@ version: "3.9"
 services:
   web:
     build: .
-    command: python manage.py runserver 0.0.0.0:8000
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --no-input &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3"
     volumes:
-      - .:/code
+      - .:/app
+      - static_volume:/app/staticfiles
     env_file:
       - ./.env
-    ports:
-      - 8000:8000
     depends_on:
-      - redis
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
   db:
     image: postgres:13
     volumes:
@@ -23,14 +27,28 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
 
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   redis:
     image: redis:7
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   celery:
     build: .
     command: celery -A config worker -l info
     volumes:
-      - .:/code
+      - .:/app
     env_file:
       - ./.env
     depends_on:
@@ -38,5 +56,16 @@ services:
       - redis
       - web
 
+  nginx:
+    build:
+      context: ./nginx
+    ports:
+      - "80:80"
+    volumes: 
+      - static_volume:/app/staticfiles:ro
+    depends_on:
+      - web
+
 volumes:
   postgres_data:
+  static_volume:
