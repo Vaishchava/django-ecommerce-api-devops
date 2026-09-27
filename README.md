@@ -7,22 +7,22 @@ A production-grade deployment pipeline and infrastructure setup for a modular Dj
 ## Technology Stack
 
 ### Application Layer
-- **Django**: Core web framework.
-- **Django REST Framework (DRF)**: Scalable RESTful API development.
-- **PostgreSQL**: Production relational database for transactional consistency.
-- **Redis**: In-memory message broker and caching layer.
-- **Celery**: Distributed task queue for asynchronous job execution (emails, order processing, background webhooks).
+- **Django**
+- **Django REST Framework (DRF)**
+- **PostgreSQL**
+- **Redis**
+- **Celery**
 
 ### DevOps & Infrastructure Layer
-- **Linux (Ubuntu)**: Base host operating system.
-- **Docker**: Application containerization.
-- **Docker Compose**: Multi-container service definition, healthcheck orchestration, and networking.
-- **Nginx**: Reverse proxy handling client ingress, TLS termination, and static asset delivery.
-- **Gunicorn**: WSGI HTTP production application server.
-- **Terraform**: Infrastructure as Code (IaC) provisioning AWS cloud resources.
-- **AWS EC2**: Virtual cloud compute host.
-- **GitHub Actions**: Automated continuous integration and continuous deployment (CI/CD) pipelines.
-- **Docker Hub**: Container registry storing immutable SHA-tagged artifacts.
+- **Linux (Ubuntu)**
+- **Docker**
+- **Docker Compose**
+- **Nginx**
+- **Gunicorn**
+- **Terraform**
+- **AWS EC2**
+- **GitHub Actions**
+- **Docker Hub**
 
 ---
 
@@ -49,14 +49,6 @@ Docker Compose recreates services
         ↓
 Application becomes available
 ```
-
-### Why Git SHA Tagging Matters
-Instead of relying on mutable tags such as `:latest`, every build outputs images tagged directly with the corresponding Git commit SHA (e.g., `web:a1b2c3d`). This guarantees:
-1. **Traceability**: An exact 1-to-1 match between the running container artifact and source code commit.
-2. **Determinism**: EC2 always pulls the exact immutable image target without caching ambiguities.
-3. **Instant Rollback**: Immediate zero-build rollbacks by targeting any previously verified SHA.
-
----
 
 ## Deployment & Verification Commands
 
@@ -93,23 +85,6 @@ Tail background worker logs:
 ```bash
 docker compose -f docker-compose.prod.yml logs -f celery
 ```
-
----
-
-## Rollback Procedure
-
-Docker images are tagged using the Git commit SHA, allowing deployments to reference a specific application version and roll back to a previously known-good release without rebuilding:
-
-1. Identify the target Git commit SHA of the last stable build.
-2. Export the version variable on the host:
-   ```bash
-   export IMAGE_TAG=<previous-git-sha>
-   ```
-3. Pull the specific historical artifacts and restart the services:
-   ```bash
-   docker compose -f docker-compose.prod.yml pull
-   docker compose -f docker-compose.prod.yml up -d
-   ```
 
 ---
 
