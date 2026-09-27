@@ -1,0 +1,69 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/django-ecommerce-api
+  NGINX_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/django-ecommerce-api-devops-nginx
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Django image
+        run: |
+          docker build \
+            -t $IMAGE_NAME:${{ github.sha }} \
+            -t $IMAGE_NAME:latest \
+            .
+
+      - name: Build Nginx image
+        run: |
+          docker build \
+            -t $NGINX_IMAGE:${{ github.sha }} \
+            -t $NGINX_IMAGE:latest \
+            ./nginx
+
+      - name: Push Django image
+        run: |
+          docker push $IMAGE_NAME:${{ github.sha }}
+          docker push $IMAGE_NAME:latest
+
+      - name: Push Nginx image
+        run: |
+          docker push $NGINX_IMAGE:${{ github.sha }}
+          docker push $NGINX_IMAGE:latest
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2_key
+          chmod 600 ~/.ssh/ec2_key
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to EC2
+        run: |
+          ssh -i ~/.ssh/ec2_key ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+
+            cd ~/django-ecommerce-api-devops
+
+            docker compose -f docker-compose.prod.yml pull
+
+            docker compose -f docker-compose.prod.yml up -d
+
+            docker image prune -f
+          EOF

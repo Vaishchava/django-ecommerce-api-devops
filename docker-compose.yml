@@ -57,7 +57,7 @@ services:
       - web
 
   nginx:
-    build:
+    build: 
       context: ./nginx
     ports:
       - "80:80"

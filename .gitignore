@@ -5,6 +5,13 @@ __pycache__/
 
 # C extensions
 *.so
+# terraform and keys
+.env
+*.pem
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/crash.log
 
 # Distribution / packaging
 .Python
