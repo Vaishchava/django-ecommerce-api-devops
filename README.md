@@ -1,6 +1,7 @@
 # Django E-Commerce API DevOps Pipeline
 
 A production-grade deployment pipeline and infrastructure setup for a modular Django REST API e-commerce platform. The project emphasizes automated CI/CD, immutable container deployments via Git SHA image tags, container orchestration with healthchecks, and infrastructure provisioned through Terraform on AWS EC2.
+<img width="1223" height="1286" alt="architecture" src="https://github.com/user-attachments/assets/e9df376c-2a56-411b-9be4-934b4411693d" />
 
 ---
 
