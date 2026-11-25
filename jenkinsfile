@@ -19,7 +19,7 @@ pipeline {
                 checkout scm
                 script {
                     env.GIT_SHA = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-                    echo "Pipeline triggered for commit: ${env.GIT_SHA}"
+                    echo "Pipeline triggered for commit-: ${env.GIT_SHA}"
                 }
             }
         }
