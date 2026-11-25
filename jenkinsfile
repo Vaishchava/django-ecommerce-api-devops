@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+
+    options {
+        timeout(time: 15, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        disableConcurrentBuilds()
+        timestamps()
+    }
+
+    environment {
+        API_IMAGE   = 'vaishchavandocker/django-ecommerce-api'
+        NGINX_IMAGE = 'vaishchavandocker/django-ecommerce-nginx'
+    }
+
+    stages {
+        stage('Checkout & Tag') {
+            steps {
+                checkout scm
+                script {
+                    env.GIT_SHA = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    echo "Pipeline triggered for commit: ${env.GIT_SHA}"
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                // Verify your repo structure and test command first
+                sh 'ls -la'
+                // Uncomment the line below once you verify your test setup (pytest or manage.py test):
+                // sh 'docker compose run --rm web python manage.py test'
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
